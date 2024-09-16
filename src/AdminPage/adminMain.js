@@ -1,217 +1,181 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Container, Grid, Typography, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Table, TableContainer, TableHead, TableBody, TableRow, TableCell, Paper } from '@mui/material';
+import Header from '../HomePage/Header';
+import bcrypt from 'bcryptjs';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
+import SessionValidationHOC from '../HomePage/sessionvalidationHoc';
+import { checkInactivity } from '../HomePage/sessionservice';
+import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
 
 const AdminPage = () => {
-  const [doctors, setDoctors] = useState([]);
-  const [staff, setStaff] = useState([]);
-  const [nurses, setNurses] = useState([]);
-
-  const [formData, setFormData] = useState({
-    category: 'doctor', // Added category to distinguish between doctor, staff, and nurse
-    first_name: '',
-    last_name: '',
-    dob: '',
-    DOC_PIC: null,
-    DEGREE_TYPE: '',
-  });
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setFormData({ ...formData, DOC_PIC: file });
-  };
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState('');
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [action, setAction] = useState(''); // State to manage the select value
+  const apiurl = process.env.React_App_API_URL;
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch doctors
-    fetch('http://127.0.0.1:3010/doctor')
-      .then(response => response.json())
-      .then(data => {
-        setDoctors(data);
-      })
-      .catch(error => {
-        console.error('Error fetching doctors:', error);
-      });
+    const intervalId = setInterval(() => {
+      checkInactivity(navigate); // Pass navigate to the checkInactivity function
+    }, 60 * 1000); // Check every minute
 
-    // Fetch staff
-    fetch('http://127.0.0.1:3010/staff')
-      .then(response => response.json())
-      .then(data => {
-        setStaff(data);
-      })
-      .catch(error => {
-        console.error('Error fetching staff:', error);
-      });
+    return () => clearInterval(intervalId);
+  }, [navigate]);
 
-    // Fetch nurses
-    fetch('http://127.0.0.1:3010/nurse')
-      .then(response => response.json())
-      .then(data => {
-        setNurses(data);
-      })
-      .catch(error => {
-        console.error('Error fetching nurses:', error);
-      });
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const formDataToSubmit = new FormData();
-    for (const key in formData) {
-      formDataToSubmit.append(key, formData[key]);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiurl}/users`);
+      const userData = response.data.data.rows;
+      // Filter out Admin, Pharmacist, and Pharma Assistant users
+      const filteredUserData = userData.filter(user => !['A', 'P', 'PA'].includes(user.typ));
+      setUsers(filteredUserData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
     }
+  }, [apiurl]);
 
-    let apiUrl;
-    switch (formData.category) {
-      case 'doctor':
-        apiUrl = 'http://127.0.0.1:3010/doctor';
-        break;
-      case 'staff':
-        apiUrl = 'http://127.0.0.1:3010/staff';
-        break;
-      case 'nurse':
-        apiUrl = 'http://127.0.0.1:3010/nurse';
-        break;
-      default:
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleCreateUser = async () => {
+    try {
+      // Check if username already exists
+      const existingUserResponse = await axios.get(`${apiurl}/users?username=${username}`);
+      if (existingUserResponse.data.exists) {
+        toast.error('User already exists!'); // Show error message
         return;
-    }
-
-    fetch(apiUrl, {
-      method: 'POST',
-      body: formDataToSubmit,
-    })
-    .then(response => response.json())
-    .then(data => {
-      switch (formData.category) {
-        case 'doctor':
-          setDoctors([...doctors, data]);
-          break;
-        case 'staff':
-          setStaff([...staff, data]);
-          break;
-        case 'nurse':
-          setNurses([...nurses, data]);
-          break;
-        default:
-          return;
       }
-      setFormData({
-        category: formData.category,
-        first_name: '',
-        last_name: '',
-        dob: '',
-        DOC_PIC: null,
-        DEGREE_TYPE: '',
-      });
-    })
-    .catch(error => {
-      console.error(`Error creating ${formData.category}:`, error);
-    });
+
+      // Hash the password and create the user if no duplicate found
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await axios.post(`${apiurl}/users`, { username, password: hashedPassword, userType });
+      setUsername('');
+      setPassword('');
+      setUserType('');
+      fetchUsers();
+      toast.success('User created successfully!');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user.');
+    }
   };
 
+  const handleDeleteUser = async (username) => {
+    try {
+      await axios.delete(`${apiurl}/users/${username}`);
+      fetchUsers();
+      toast.success('Deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
+
+  const handleUpdatePassword = async (username, newPassword) => {
+    try {
+      const hashedPassword = await bcrypt.hash(newPassword, 10); // Hash the new password before sending it
+      await axios.put(`${apiurl}/users/${username}`, { usrnme: username, pswd: hashedPassword });
+      fetchUsers();
+      toast.success('Password updated successfully!');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error('Failed to update password.');
+    }
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.usrnme.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <Container sx={{ py: 4 }}>
-      <Typography variant="h4" mb={2}>Admin Page</Typography>
-
-      {/* Category Dropdown */}
-      <FormControl fullWidth variant="outlined" mb={4}>
-        <InputLabel>Category</InputLabel>
-        <Select
-          label="Category"
-          value={formData.category}
-          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-        >
-          <MenuItem value="doctor">Doctor</MenuItem>
-          <MenuItem value="staff">Staff</MenuItem>
-          <MenuItem value="nurse">Nurse</MenuItem>
-        </Select>
-      </FormControl>
-
-      {/* Form for Adding */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h5" mb={2}>Add {formData.category.charAt(0).toUpperCase() + formData.category.slice(1)}</Typography>
-        <form onSubmit={handleSubmit}>
-          <input type="hidden" name="category" value={formData.category} />
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="First Name"
-                name="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Last Name"
-                name="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Date of Birth"
-                type="date"
-                name="dob"
-                value={formData.dob}
-                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-            </Grid>
-            {formData.category === 'doctor' && (
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Degree Type"
-                  name="DEGREE_TYPE"
-                  value={formData.DEGREE_TYPE}
-                  onChange={(e) => setFormData({ ...formData, DEGREE_TYPE: e.target.value })}
-                />
-              </Grid>
-            )}
-            <Grid item xs={12}>
-              <input
-                type="file"
-                accept="image/*"
-                name="DOC_PIC"
-                onChange={handleFileChange}
-              />
-            </Grid>
-          </Grid>
-          <Button type="submit" variant="contained" mt={2}>
-            Create {formData.category.charAt(0).toUpperCase() + formData.category.slice(1)}
-          </Button>
-        </form>
-      </Paper>
-
-      {/* Display Lists */}
-      <Typography variant="h4" mb={2}>Doctors</Typography>
-      <ul>
-        {doctors.map((doctor, index) => (
-          <li key={index}>{doctor.first_name} {doctor.last_name} - {doctor.DEGREE_TYPE}</li>
-        ))}
-      </ul>
-
-      <Typography variant="h4" mb={2}>Staff</Typography>
-      <ul>
-        {staff.map((staffMember, index) => (
-          <li key={index}>{staffMember.first_name} {staffMember.last_name}</li>
-        ))}
-      </ul>
-
-      <Typography variant="h4" mb={2}>Nurses</Typography>
-      <ul>
-        {nurses.map((nurse, index) => (
-          <li key={index}>{nurse.first_name} {nurse.last_name}</li>
-        ))}
-      </ul>
-    </Container>
+    <div>
+      <Header />
+      <ToastContainer />
+      <div style={{ marginTop: '20px', marginLeft: '10px' }}>
+        <h2 style={{ color: '#18B7BE', fontSize: '24px', display: 'inline-block' }}>Create User</h2>
+        <div style={{ marginTop: '40px' }}>
+          <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} style={{ marginLeft: '30px' }} />
+          <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ marginLeft: '30px' }} />
+          <FormControl>
+            <InputLabel style={{ marginLeft: '30px' }}>User Type</InputLabel>
+            <Select style={{ width: '300px', marginLeft: '30px' }} value={userType} onChange={(e) => setUserType(e.target.value)} >
+              <MenuItem value="">Select User Type</MenuItem>
+              <MenuItem value="N">Nurse</MenuItem>
+              <MenuItem value="FD">Front Desk</MenuItem>
+              <MenuItem value="D">Doctor</MenuItem>
+            </Select>
+          </FormControl>
+          <Button onClick={handleCreateUser} variant="contained" style={{ marginLeft: '30px', color: 'primary', background: '#178CA4' }}>Create User</Button>
+        </div>
+      </div>
+      <hr style={{ width: '100%', color: '#005493', backgroundColor: '#18B7BE', height: '1px', border: 'none' }} />
+      <h2 style={{ color: '#18B7BE', fontSize: '24px', display: 'inline-block', marginLeft: '10px' }}>Users</h2>
+      <TextField
+        label="Search "
+        style={{ marginTop: '30px', marginBottom: '20px' }}
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
+      />
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Username</TableCell>
+              <TableCell>User Type</TableCell>
+              <TableCell style={{ width: '300px' }}>Action</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredUsers.map(user => (
+              <TableRow key={user.usrnme}>
+                <TableCell>{user.usrnme}</TableCell>
+                <TableCell>
+                  {user.typ === 'N' && 'Nurse'}
+                  {user.typ === 'FD' && 'Front Desk'}
+                  {user.typ === 'D' && 'Doctor'}
+                </TableCell>
+                <TableCell>
+                  <FormControl>
+                    <Select
+                      value={action}
+                      style={{ width: '300px' }}
+                      onChange={(e) => {
+                        const selectedAction = e.target.value;
+                        if (selectedAction === 'delete') {
+                          handleDeleteUser(user.usrnme);
+                        } else if (selectedAction === 'updatePassword') {
+                          const newPassword = prompt('Enter new password:');
+                          if (newPassword !== null) {
+                            handleUpdatePassword(user.usrnme, newPassword);
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="delete">Delete</MenuItem>
+                      <MenuItem value="updatePassword">Update Password</MenuItem>
+                    </Select>
+                  </FormControl>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </div>
   );
 };
 
-export default AdminPage;
+export default SessionValidationHOC(AdminPage);

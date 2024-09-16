@@ -1,81 +1,72 @@
 import React from 'react';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import { useNavigate } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button } from '@mui/material';
-import { Link, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
-import vaidhyalogo from '../images/vaidhya_header_img.jpg';
-import ScheduleAppointment from './ScheduleAppointment'; // Correct the import path
-//import ViewAppointments from './ViewAppointments'; // Correct the import path
-import ViewAppointments from './ViewAppoinments';
-// Import the components for My Profile, Documents, Reports, and Payment Mode
-import MyProfile from './MyProfile';
-import Documents from './Documents';
-import Reports from './Reports';
-import PaymentMode from './PaymentMode';
+import { AppBar, Toolbar, Button, Grid, Paper, Typography, Box, Avatar } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { makeStyles } from '@mui/styles';
+import Header from '../HomePage/Header';
 
-const Dropdown = () => {
-  const [selectedOption, setSelectedOption] = React.useState('view');
-  const navigate = useNavigate();
+const useStyles = makeStyles({
+  paper: {
+    padding: '20px',
+    textAlign: 'center',
+    transition: 'transform 0.3s, box-shadow 0.3s',
+    boxShadow: '#4b0082',
+    '&:hover': {
+      transform: 'translateY(-10px)',
+      boxShadow: '#4b0082',
+    },
+  },
+  link: {
+    textDecoration: 'none',
+    color: 'inherit',
+  },
+  profile: {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+  },
+  avatar: {
+    width: '60px',
+    height: '60px',
+    cursor: 'pointer',
+  },
+});
 
-  const handleSelect = (event) => {
-    setSelectedOption(event.target.value);
-    if (event.target.value === 'view') {
-      navigate('/ViewAppointments'); // Correct the navigation path
-    } else if (event.target.value === 'schedule') {
-      navigate('/ScheduleAppointments'); // Correct the navigation path
-    }
-  };
+const sections = [
+  { title: 'Appointment', link: '/appointment' },
+  { title: 'Personal Information', link: '/Patients' },
+  { title: 'Medical Records', link: '/document' },
+  { title: 'Prescription', link: '/doctorprescription' },
+  { title: 'Billing & Payments', link: '/billing' },
+  { title: 'Health Track', link: '/analytics' },
+];
 
+const PatientPage = () => {
+  const classes = useStyles();
   return (
-    <Select
-      label="Appointment Options"
-      value={selectedOption}
-      onChange={handleSelect}
-    >
-      <MenuItem value="view">View Appointments</MenuItem>
-      <MenuItem value="schedule">Schedule Appointment</MenuItem>
-    </Select>
+    <div>
+      <Header />
+      <Box p={3}>
+        <Typography variant="h4" gutterBottom style={{ color: '#c71585', textAlign: 'center', marginBottom: '4%' }}>
+          Welcome to Vaidhya Health Care
+        </Typography>
+        <Grid container spacing={10}>
+          {sections.map((section, index) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+              <Paper className={classes.paper} elevation={3}>
+                <Link to={section.link} className={classes.link}>
+                  <Typography variant="h6" style={{color:'#b22222',backgroundColor:'#8fbc8f'}}>{section.title} </Typography>
+                </Link>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+        <div className={classes.profile} style={{marginTop:'5%'}}>
+          <Link to="/myprofile">
+            <Avatar className={classes.avatar} src="/path/to/profile-picture.jpg" /> 
+          </Link>        </div>
+      </Box>
+    </div>
   );
 };
-
-function PatientPage() {
-  return (
-    <Router>
-      <div>
-        <AppBar position="static">
-          <Toolbar>
-            <img src={vaidhyalogo} alt="Vaidhya Logo" width="100" />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Vaidhya Health Care
-            </Typography>
-            <Button color="inherit" component={Link} to="/MyProfile">
-              My Profile
-            </Button>
-            <Button color="inherit" component={Link} to="/Documents">
-              Documents
-            </Button>
-            <Button color="inherit" component={Link} to="/Reports">
-              Reports
-            </Button>
-            <Button color="inherit" component={Link} to="/Paymentmode">
-              Payment Mode
-            </Button>
-            <Dropdown />
-          </Toolbar>
-        </AppBar>
-      </div>
-
-      <Routes>
-        <Route path="/MyProfile" element={<MyProfile />} />
-        <Route path="/Documents" element={<Documents />} />
-        <Route path="/Reports" element={<Reports />} />
-        <Route path="/Paymentmode" element={<PaymentMode />} />
-        <Route path="/ScheduleAppointments" element={<ScheduleAppointment />} /> {/* Correct the route path */}
-        <Route path="/ViewAppointments" element={<ViewAppointments />} /> {/* Correct the route path */}
-      </Routes>
-    </Router>
-  );
-}
 
 export default PatientPage;
