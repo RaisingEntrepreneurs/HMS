@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Paper, Avatar, Box, Button, TextField, Grid } from '@mui/material';
-import Header from '../HomePage/Header';
+import Header from '../HomePage/login';
 
 const MyProfile = () => {
   const [patientData, setPatientData] = useState(null);

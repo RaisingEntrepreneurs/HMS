@@ -2,7 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, Button, Grid, Paper, Typography, Box, Avatar } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { makeStyles } from '@mui/styles';
-import Header from '../HomePage/Header';
+import Header from '../HomePage/login';
 
 const useStyles = makeStyles({
   paper: {

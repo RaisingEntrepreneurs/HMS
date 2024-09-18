@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Table, TableContainer, TableHead, TableBody, TableRow, TableCell, Paper } from '@mui/material';
-import Header from '../HomePage/Header';
+import LoginEffect from '../HomePage/login';
 import bcrypt from 'bcryptjs';
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -95,8 +95,7 @@ const AdminPage = () => {
 
   return (
     <div>
-      <Header />
-      <ToastContainer />
+         <ToastContainer />
       <div style={{ marginTop: '20px', marginLeft: '10px' }}>
         <h2 style={{ color: '#18B7BE', fontSize: '24px', display: 'inline-block' }}>Create User</h2>
         <div style={{ marginTop: '40px' }}>

@@ -50,12 +50,12 @@ const sections = [
   { title: 'To-do', link: '/Doctorhome/todo', icon: 'assignment' },
   { title: 'Appointment', link: '/Doctorhome/calendar', icon: 'calendar' },
   { title: 'Patients Management', link: '/Doctorhome/patients', icon: 'people' },
-  { title: 'Reports', link: '/Doctorhome/reports', icon: 'report' },
+  { title: 'Billing & Payments', link: '/Doctorhome/billing', icon: 'payment' },
   { title: 'Logout', link: '/logout', icon: 'logout' },
 ];
 
 
-const Nursehome = () => {
+const Forntdeskhome = () => {
   const classes = useStyles();
   const [pageTitle, setPageTitle] = useState('Welcome to Clinic Management System');
   return (
@@ -126,4 +126,4 @@ function getIcon(iconName) {
   }
 }
 
-export default Nursehome;
+export default Forntdeskhome;

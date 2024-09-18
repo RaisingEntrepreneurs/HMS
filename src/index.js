@@ -21,12 +21,14 @@ import Charts from "./Doctor/charts";
 import PatientBilling from "./Doctor/patientbilling";
 import PatientReports from "./Doctor/patientreports";
 import Snapshot from "./Doctor/snapshot";
-
+import HomePage from "./HomePage/home";
+import Forntdeskhome from "./front_desk/fdhome";
 function Vaidhya() {
   return (
     <Router>
       <Routes>
-       
+       {/*home page */}
+       <Route path="/home" element={<HomePage />} />
         {/* Patient-related routes */}
         <Route path="/patientpage" element={<PatientPage />} /> 
         <Route path="appointment" element={<Appointment />} />
@@ -53,7 +55,8 @@ function Vaidhya() {
         <Route path="/nursehome" element={<Nursehome />}>
           <Route path="nursetask" element={<NurseTasks />} />
         </Route>
-
+        {/*front desk routes*/}
+        <Route path="/frontdeskhome" element={<Forntdeskhome />} />
         {/* Admin routes can be added similarly */}
         <Route path="/adminpage" element={<AdminPage />} />
       </Routes>

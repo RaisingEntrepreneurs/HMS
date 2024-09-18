@@ -1,5 +1,5 @@
 import React from 'react';
-import Header from '../HomePage/Header';
+import Header from '../HomePage/login';
 import { Grid, Paper, Typography, Box } from '@mui/material';
 
 const Reports = () => {
